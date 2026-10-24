@@ -33,4 +33,30 @@ function say(text){if(!('speechSynthesis'in window)){toast('Speech output is not
 function download(name,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}$('exportBtn').onclick=()=>download('janus-backup-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({version:1,exportedAt:new Date().toISOString(),entries},null,2),'application/json');$('importFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text()),incoming=Array.isArray(data)?data:data.entries;if(!Array.isArray(incoming))throw Error('Invalid backup');const ids=new Set(entries.map(x=>x.id));incoming.forEach(x=>{if(x&&x.text&&x.category&&!ids.has(x.id)){entries.push(x);ids.add(x.id)}});persist();render();toast('Backup imported.')}catch(err){toast('Could not import that file.')}e.target.value=''};
 function icsEscape(s){return String(s).replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;')}function fmtICS(ms){return new Date(ms).toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'')}$('calendarBtn').onclick=()=>{const list=entries.filter(e=>e.remindAt&&!e.done);if(!list.length){toast('No scheduled reminders to export yet.');return}const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Janus Assistant//EN','CALSCALE:GREGORIAN'];list.forEach(e=>{const start=Number(e.remindAt);if(!Number.isFinite(start))return;lines.push('BEGIN:VEVENT','UID:'+e.id+'@janus.local','DTSTAMP:'+fmtICS(Date.now()),'DTSTART:'+fmtICS(start),'SUMMARY:'+icsEscape(e.text.slice(0,100)),'DESCRIPTION:'+icsEscape(e.text),'END:VEVENT')});lines.push('END:VCALENDAR');download('janus-reminders.ics',lines.join('\r\n'),'text/calendar;charset=utf-8');toast('Calendar file created. Import it into your calendar app.')};
 render();
+</script>
+<script>
+const JANUS_AI_URL = "https://janus-ai.djmadz360.workers.dev/";
+
+async function askJanusAI(message) {
+  try {
+    const response = await fetch(JANUS_AI_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: message })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.details || data.error || "AI request failed");
+    }
+
+    return data.reply;
+  } catch (error) {
+    console.error("Janus AI error:", error);
+    return "I couldn't connect to Janus AI. Please try again.";
+  }
+}
 </script></body></html>
