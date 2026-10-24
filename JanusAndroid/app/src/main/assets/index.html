@@ -17,7 +17,18 @@
 <div class="filters" id="filters"><button class="filter active" data-filter="All">All</button><button class="filter" data-filter="Reminder">Reminders</button><button class="filter" data-filter="Task">Tasks</button><button class="filter" data-filter="Thought">Thoughts</button><button class="filter" data-filter="Idea">Ideas</button><button class="filter" data-filter="Note">Notes</button><button class="filter" data-filter="Question">Questions</button></div><div id="entries"></div>
 <div class="row" style="margin-top:13px"><button class="secondary" id="exportBtn" type="button">Export backup</button><button class="secondary" id="calendarBtn" type="button">Export calendar (.ics)</button><label class="secondary" style="display:block;text-align:center;border-radius:11px;padding:10px 13px;font-weight:700;cursor:pointer" for="importFile">Import backup</label><input id="importFile" type="file" accept="application/json,.json" class="hidden"></div><div class="small" style="margin-top:8px">Export a backup to move your saved entries to another device. Calendar export creates an .ics file for compatible calendar apps.</div></section>
 <section class="panel"><h2 class="section-title">A gentle check-in</h2><p style="margin:0 0 12px">If you're distracted or overwhelmed, Janus can help you choose one small next step.</p><div class="row"><button class="secondary" id="checkinBtn" type="button">Help me refocus</button><button class="secondary" id="speakBtn" type="button">🔊 Read aloud</button></div><p id="checkinText" class="status" style="margin-top:12px"></p></section>
-<footer>JANUS · A free-first prototype for capturing, remembering, and restarting.<br>Prototype limitations: browser speech support varies; reminders may not fire if the page is closed; no live AI or Zoom capture yet.</footer></main><div class="toast" id="toast" role="status"></div>
+
+<section class="panel" id="aiChat">
+  <h2 class="section-title">Talk to Janus AI</h2>
+  <div id="aiMessages" aria-live="polite">
+    <p>Ask Janus a question or explore an idea.</p>
+  </div>
+  <textarea id="aiMessage" placeholder="Type your message to Janus..."></textarea>
+  <button id="aiSend" type="button">Send to Janus</button>
+  <p id="aiStatus" aria-live="polite"></p>
+</section>
+
+  <footer>JANUS · A free-first prototype for capturing, remembering, and restarting.<br>Prototype limitations: browser speech support varies; reminders may not fire if the page is closed; no live AI or Zoom capture yet.</footer></main><div class="toast" id="toast" role="status"></div>
 <script>
 const $=id=>document.getElementById(id);let entries=[],activeFilter='All',recognition=null,listening=false;try{entries=JSON.parse(localStorage.getItem('janusEntries')||'[]')}catch(e){entries=[]}
 function persist(){try{localStorage.setItem('janusEntries',JSON.stringify(entries))}catch(e){toast('Could not save locally. Export a backup and free browser storage.')}}function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove('show'),2800)}
@@ -59,4 +70,33 @@ async function askJanusAI(message) {
     return "I couldn't connect to Janus AI. Please try again.";
   }
 }
+  document.getElementById("aiSend").addEventListener("click", async () => {
+  const input = document.getElementById("aiMessage");
+  const messages = document.getElementById("aiMessages");
+  const status = document.getElementById("aiStatus");
+  const button = document.getElementById("aiSend");
+  const message = input.value.trim();
+
+  if (!message) {
+    status.textContent = "Please type a message first.";
+    return;
+  }
+
+  const userMessage = document.createElement("p");
+  userMessage.textContent = "You: " + message;
+  messages.appendChild(userMessage);
+
+  input.value = "";
+  button.disabled = true;
+  status.textContent = "Janus is thinking...";
+
+  const reply = await askJanusAI(message);
+
+  const janusMessage = document.createElement("p");
+  janusMessage.textContent = "Janus: " + reply;
+  messages.appendChild(janusMessage);
+
+  status.textContent = "";
+  button.disabled = false;
+});
 </script></body></html>
