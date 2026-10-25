@@ -67,7 +67,7 @@ async function askJanusAI(message) {
     return data.reply;
   } catch (error) {
     console.error("Janus AI error:", error);
-    return "I couldn't connect to Janus AI. Please try again.";
+    return "Connection error: " + error.message;
   }
 }
   document.getElementById("aiSend").addEventListener("click", async () => {
